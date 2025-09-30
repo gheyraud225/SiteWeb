@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Roman Mayor – Portfolio / CV</title>
+  <meta name="description" content="Portfolio et CV de Roman Mayor : expériences, projets, compétences et contact." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    // Appliquer le thème au plus tôt pour éviter le FOUC
+    (function(){
+      try {
+        const stored = localStorage.getItem('theme');
+        const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+        const theme = stored || (prefersLight ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch(_) {}
+    })();
+
+  </script>
+ <link rel="stylesheet" href="/style/style.css">
+
+</head>
+<body>
+  <!-- ===== Header / Nav ===== -->
+  <header class="site">
+    <a class="skip-link" href="#apropos" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">Aller au contenu</a>
+    <div class="wrap site-inner">
+      <div class="brand">
+        <div class="avatar" aria-hidden="true"><img src="asset/img/pp.webp" alt="Portrait de Roman Mayor" loading="eager" decoding="async"></div>
+        <h1>Roman Mayor</h1>
+      </div>
+      <nav class="primary" aria-label="Navigation principale">
+        <a href="#apropos">À propos</a>
+        <a href="#experiences">Expériences</a>
+        <a href="#projets">Projets</a>
+        <a href="./blog.html">Blog</a>
+        <a href="#competences">Compétences</a>
+        <a href="#formation">Formation</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button id="theme-toggle" class="btn" type="button" onclick="toggleTheme()" aria-label="Basculer le thème" aria-pressed="false" title="Basculer Dark/Light">🌙</button>
+        <button class="btn menu-btn" aria-expanded="false" aria-controls="mobile-menu" onclick="toggleMenu()">Menu</button>
+      </div>
+    </div>
+    <div id="mobile-menu" class="wrap" hidden>
+      <nav class="card" style="padding:12px; display:grid; gap:8px;" aria-label="Navigation mobile">
+        <a href="#apropos" onclick="toggleMenu(true)">À propos</a>
+        <a href="#experiences" onclick="toggleMenu(true)">Expériences</a>
+        <a href="#projets" onclick="toggleMenu(true)">Projets</a>
+        <a href="./blog.html" onclick="toggleMenu(true)">Blog</a>
+        <a href="#competences" onclick="toggleMenu(true)">Compétences</a>
+        <a href="#formation" onclick="toggleMenu(true)">Formation</a>
+        <a href="#contact" onclick="toggleMenu(true)">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ===== Hero ===== -->
+  <div class="wrap hero">
+    <section class="card">
+      <p class="kicker">Portfolio / CV</p>
+      <h2 class="title">Salut, je suis <strong>Roman</strong>, <span style="white-space:nowrap;">étudiant en informatique</span> basé à Zurich.</h2>
+      <p class="subtitle">Étudiant en informatique à l'ETH Zürich, je touche à de nombreux sujets dont l'optimisation, l'IA et bien d'autres…</p>
+      <div class="cta">
+        <a class="btn primary" href="#projets">Voir mes projets</a>
+        <a class="btn" href="#contact">Me contacter</a>
+        <a class="btn" href="mailto:mayorr27@gmail.com">Email</a>
+      </div>
+    </section>
+    <aside class="card" style="padding:20px;">
+      <img src="https://picsum.photos/640/400" alt="Bannière de présentation" loading="lazy" decoding="async" />
+    </aside>
+  </div>
+
+  <main class="wrap">
+    <!-- ===== À propos ===== -->
+    <section id="apropos">
+      <div class="header">
+        <h3>À propos</h3>
+        <span class="badge">Disponible pour alternance / freelance</span>
+      </div>
+      <div class="grid cols-2">
+        <div class="item">
+          <h4>Résumé</h4>
+          <p>Je suis un étudiant avide d'expériences et de découvertes. Je peux travailler dans de nombreux secteurs tels que l'IA, l'optimisation et le développement web. J'aime aussi partager mes connaissances et je propose du mentoring.</p>
+        </div>
+        <div class="item">
+          <h4>Infos rapides</h4>
+          <ul>
+            <li>Basé à : Zurich, Suisse</li>
+            <li>Langues : Français (natif), Anglais (compétence professionnelle complète), Allemand (compétence professionnelle limitée)</li>
+            <li>Disponibilité : Immédiate</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Expériences ===== -->
+    <section id="experiences">
+      <div class="header">
+        <h3>Expériences</h3>
+        <span class="meta">Dernières positions</span>
+      </div>
+      <div class="timeline">
+        <article class="t-item">
+          <h4>Stagiaire – HCP Asset Management</h4>
+          <p class="meta">Août 2025 – Septembre 2025</p>
+          <ul>
+            <li>Optimisation des performances.</li>
+            <li>Traitement de données en parallèle.</li>
+            <li>Conseils sur l'implémentation de nouvelles techniques.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===== Projets ===== -->
+    <section id="projets">
+      <div class="header">
+        <h3>Projets</h3>
+        <a class="badge" href="#">Tout voir</a>
+      </div>
+      <div class="grid cols-3">
+        <article class="item">
+          <h4>Black‑Scholes Dashboard</h4>
+          <p class="meta">Python · Data display · Finance</p>
+          <p>Dashboard qui présente des données suivant le modèle de Black‑Scholes : calcul du prix des options et visualisation des grecs (Delta, Gamma, Vega).</p>
+          <p><a href="https://github.com/gheyraud225/black-scholes-dash" target="_blank" rel="noopener">Code</a></p>
+        </article>
+        
+        <article class="item">
+          <h4>Algorithme de Monte‑Carlo appliqué à la finance</h4>
+          <p class="meta">Monte‑Carlo · Python · Probabilités</p>
+          <p>Simulation de trajectoires de prix d'une action dans un futur proche en se basant sur un algorithme de Monte‑Carlo.</p>
+          <p><a href="https://github.com/gheyraud225/stock_prediction_MonteCarlo" target="_blank" rel="noopener">Code</a></p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===== Compétences ===== -->
+    <section id="competences">
+      <div class="header">
+        <h3>Compétences</h3>
+        <span class="meta">Tech & outils</span>
+      </div>
+      <div class="grid cols-3">
+        <div class="item">
+          <h4>Langages</h4>
+          <div class="stack">
+            <span class="badge">Python</span>
+            <span class="badge">Java</span>
+            <span class="badge">HTML</span>
+            <span class="badge">CSS</span>
+            <span class="badge">JavaScript</span>
+            <span class="badge">Assembleur</span>
+            <span class="badge">Verilog</span>
+          </div>
+        </div>
+        <div class="item">
+          <h4>Outils</h4>
+          <div class="stack">
+            <span class="badge">Git</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Formation ===== -->
+    <section id="formation">
+      <div class="header">
+        <h3>Formation</h3>
+        <span class="meta">Diplômes & certificats</span>
+      </div>
+      <div class="timeline">
+        <article class="t-item">
+          <h4>Bachelor en informatique – ETH Zürich</h4>
+          <p class="meta">2024 – 2028</p>
+          <p>Cours clés : Structures de données, Algorithmes, Mathématiques (Algèbre, Analyse, Discrète, Probabilités), Architecture des ordinateurs, Programmation parallèle.</p>
+        </article>
+      </div>
+      <div class="timeline">
+        <article class="t-item">
+          <h4>Maturité gymnasiale – Lycée Denis‑de‑Rougemont</h4>
+          <p class="meta">2021 – 2024</p>
+          <p>Résultat : mention bien, moyenne 5.00/6.00.</p>
+          <p>Activités et associations : Membre du groupe de liaison (2 ans). Président de classe (3 ans).</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===== Contact ===== -->
+    <section id="contact">
+      <div class="header">
+        <h3>Contact</h3>
+        <span class="meta">Restons en lien</span>
+      </div>
+      <div class="grid cols-2">
+        <div class="item">
+          <h4>Me joindre</h4>
+          <p>Email : <a href="mailto:mayorr27@gmail.com">mayorr27@gmail.com</a></p>
+          <p>LinkedIn : <a href="https://www.linkedin.com/in/romanmayor/" target="_blank" rel="noopener">linkedin.com/in/romanmayor</a></p>
+          <p>GitHub : <a href="https://github.com/gheyraud225" target="_blank" rel="noopener">github.com/gheyraud225</a></p>
+        </div>
+        <form class="item" onsubmit="event.preventDefault(); alert('Merci ! Votre message a été simulé.');">
+          <h4>Formulaire rapide</h4>
+          <label>Nom<br>
+            <input type="text" name="nom" required style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:var(--surface); color:var(--text); outline-color:var(--ring);" />
+          </label><br><br>
+          <label>Email<br>
+            <input type="email" name="email" required style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:var(--surface); color:var(--text); outline-color:var(--ring);" />
+          </label><br><br>
+          <label>Message<br>
+            <textarea name="message" rows="4" required style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:var(--surface); color:var(--text); outline-color:var(--ring);"></textarea>
+          </label><br><br>
+          <button class="btn primary" type="submit">Envoyer</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap">
+    <div>
+      © <span id="year"></span> Roman Mayor — Portfolio.
+    </div>
+  </footer>
+
+  <script>
+    // Année dynamique
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Menu mobile
+    function toggleMenu(forceClose){
+      const btn = document.querySelector('.menu-btn');
+      const menu = document.getElementById('mobile-menu');
+      const expanded = forceClose ? false : btn.getAttribute('aria-expanded') === 'true' ? false : true;
+      btn.setAttribute('aria-expanded', expanded);
+      menu.hidden = !expanded;
+    }
+
+    // Thème Dark/Light
+    function setTheme(theme){
+      document.documentElement.setAttribute('data-theme', theme);
+      try { localStorage.setItem('theme', theme); } catch(_) {}
+      const btn = document.getElementById('theme-toggle');
+      if(btn){
+        const isLight = theme === 'light';
+        btn.setAttribute('aria-pressed', isLight);
+        btn.textContent = isLight ? '☀️' : '🌙';
+        btn.title = isLight ? 'Basculer en mode sombre' : 'Basculer en mode clair';
+      }
+    }
+    function toggleTheme(){
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      setTheme(current === 'dark' ? 'light' : 'dark');
+    }
+    // Met à jour le bouton au chargement
+    document.addEventListener('DOMContentLoaded', () => {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      setTheme(current);
+    });
+    // Suit le système si l'utilisateur n'a pas de préférence sauvegardée
+    if(window.matchMedia){
+      const mq = window.matchMedia('(prefers-color-scheme: light)');
+      mq.addEventListener && mq.addEventListener('change', (e) => {
+        try { if(!localStorage.getItem('theme')) setTheme(e.matches ? 'light' : 'dark'); } catch(_) {}
+      });
+    }
+  </script>
+</body>
+</html>

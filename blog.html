@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Blog – Roman Mayor</title>
+  <meta name="description" content="Articles, notes et projets de Roman Mayor." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style/style.css">
+</head>
+<body>
+  <header class="site">
+    <div class="wrap site-inner">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <strong>Roman Mayor — Blog</strong>
+      </div>
+      <nav class="nav">
+        <a href="index.html">Accueil</a>
+        <a href="#" id="adminToggle" title="Basculer l'édition">Mode admin</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap" id="app">
+    <section class="header-block">
+      <h1 style="margin:0">Articles</h1>
+      <div class="search">
+        <input id="q" type="search" placeholder="Rechercher un article… (titre, tags)" />
+        <button class="btn" id="clearFilters" title="Effacer">Effacer</button>
+        <button class="btn primary" id="newPostBtn">Nouveau</button>
+      </div>
+    </section>
+
+    <section id="listView" style="margin-top:16px">
+      <div class="grid cols-3" id="postGrid"></div>
+      <p id="emptyState" style="display:none; color:var(--muted); margin-top:12px">Aucun article pour l'instant. Cliquez sur <em>Nouveau</em> pour en créer un.</p>
+    </section>
+
+    <section id="detailView" class="detail card" style="display:none; margin-top:16px"></section>
+
+    <section id="editorView" class="editor card" style="display:none">
+      <h2 id="editorTitle">Nouvel article</h2>
+      <div style="display:grid; gap:12px">
+        <label>Titre<br><input id="title" required maxlength="140"></label>
+        <label>Tags (séparés par des virgules)<br><input id="tags" placeholder="ex: IA, optimisation, finance"></label>
+        <label>Contenu (Markdown simple supporté)<br><textarea id="content" placeholder="Écrivez ici…\n\n**Astuce**: utilisez des retours à la ligne pour créer des paragraphes."></textarea></label>
+        <label style="display:flex; align-items:center; gap:8px"><input type="checkbox" id="published"> Publier</label>
+        <div style="display:flex; gap:8px; flex-wrap:wrap">
+          <button class="btn primary" id="savePost">Enregistrer</button>
+          <button class="btn" id="previewPost">Aperçu</button>
+          <button class="btn" id="cancelEdit">Annuler</button>
+          <button class="btn" id="deletePost" style="margin-left:auto; display:none">Supprimer</button>
+        </div>
+      </div>
+      <div id="preview" class="card" style="margin-top:12px; display:none">
+        <div class="post-meta">Aperçu</div>
+        <h3 style="margin:6px 0" id="previewTitle"></h3>
+        <div class="tags" id="previewTags"></div>
+        <div class="content" id="previewContent"></div>
+      </div>
+    </section>
+  </main>
+
+  <template id="postCardTpl">
+    <article class="card">
+      <h3 class="post-title"><a class="postLink" href="#"></a></h3>
+      <div class="post-meta"><span class="date"></span> · <span class="read"></span></div>
+      <div class="tags"></div>
+      <p class="excerpt" style="margin-top:8px"></p>
+      <div class="adminBtns" style="display:none; margin-top:8px; display:flex; gap:8px">
+        <button class="btn editBtn">Éditer</button>
+        <button class="btn" data-publish></button>
+      </div>
+    </article>
+  </template>
+
+  <script>
+    /* ===============================
+       Mini blog client-side (localStorage)
+       - Liste / lecture
+       - Création / édition / suppression
+       - Publication / dépublication
+       - Recherche par titre/tags
+       - Prévisualisation Markdown minimal
+       Astuce admin: ajouter ?admin=1 à l'URL ou cliquer "Mode admin"
+    ================================ */
+    const STORE_KEY = 'blog_posts_v1';
+    const $ = (sel, root=document) => root.querySelector(sel);
+    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+    const state = {
+      admin: new URLSearchParams(location.search).get('admin') === '1',
+      editingId: null,
+      posts: []
+    };
+
+    // Utils
+    const uid = () => 'id-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    const slugify = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+    const fmtDate = iso => new Date(iso).toLocaleDateString('fr-CH', {year:'numeric', month:'short', day:'numeric'});
+    const estLire = txt => Math.max(1, Math.round(txt.split(/\s+/).length / 220));
+
+    function save(){ localStorage.setItem(STORE_KEY, JSON.stringify(state.posts)); }
+    function load(){ try{ state.posts = JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); }catch{ state.posts = []; } }
+
+    // Markdown minimal (très simple)
+    function md(input){
+      const esc = input.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+      return esc
+        .replace(/^### (.*)$/gm, '<h3>$1</h3>')
+        .replace(/^## (.*)$/gm, '<h2>$1</h2>')
+        .replace(/^# (.*)$/gm, '<h1>$1</h1>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\n\n+/g, '</p><p>')
+        .replace(/^/, '<p>').replace(/$/, '</p>');
+    }
+
+    // Routing simple: #post=slug
+    function getHash(){
+      const h = new URLSearchParams(location.hash.slice(1));
+      return { post: h.get('post') };
+    }
+    function setHash(obj){
+      const h = new URLSearchParams(obj).toString();
+      location.hash = h; // déclenche hashchange
+    }
+
+    // Rendu liste
+    function renderList(){
+      $('#detailView').style.display = 'none';
+      $('#editorView').style.display = 'none';
+      $('#listView').style.display = '';
+
+      const grid = $('#postGrid');
+      grid.innerHTML = '';
+      const query = ($('#q').value || '').trim().toLowerCase();
+      const filtered = state.posts.filter(p => p.published).filter(p => {
+        if(!query) return true;
+        const inTitle = p.title.toLowerCase().includes(query);
+        const inTags = (p.tags||[]).join(',').toLowerCase().includes(query);
+        return inTitle || inTags;
+      }).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      $('#emptyState').style.display = filtered.length ? 'none' : '';
+
+      for(const p of filtered){
+        const tpl = $('#postCardTpl').content.cloneNode(true);
+        $('.postLink', tpl).textContent = p.title;
+        $('.postLink', tpl).href = `#post=${p.slug}`;
+        $('.date', tpl).textContent = fmtDate(p.createdAt);
+        $('.read', tpl).textContent = `${estLire(p.content)} min`;
+        const tags = $('.tags', tpl);
+        (p.tags||[]).forEach(t=>{ const b=document.createElement('span'); b.className='badge'; b.textContent=t; tags.appendChild(b); });
+        $('.excerpt', tpl).textContent = p.raw.slice(0,160) + (p.raw.length>160?'…':'');
+        if(state.admin){
+          const admin = $('.adminBtns', tpl);
+          admin.style.display='flex';
+          $('.editBtn', tpl).onclick = ()=> openEditor(p.id);
+          const pbBtn = $('[data-publish]', tpl);
+          pbBtn.textContent = p.published? 'Dépublier' : 'Publier';
+          pbBtn.onclick = ()=> togglePublish(p.id);
+        }
+        grid.appendChild(tpl);
+      }
+    }
+
+    // Détail
+    function renderDetail(post){
+      $('#listView').style.display = 'none';
+      $('#editorView').style.display = 'none';
+      const detail = $('#detailView');
+      detail.style.display = '';
+      detail.innerHTML = `
+        <a class="btn" href="#" onclick="event.preventDefault(); setHash({});">← Retour</a>
+        <h1>${post.title}</h1>
+        <div class="post-meta">${fmtDate(post.createdAt)} · ${estLire(post.content)} min</div>
+        <div class="tags">${(post.tags||[]).map(t=>`<span class='badge'>${t}</span>`).join('')}</div>
+        <div class="content">${md(post.raw)}</div>
+      `;
+    }
+
+    // Éditeur
+    function openEditor(id=null){
+      $('#listView').style.display = 'none';
+      $('#detailView').style.display = 'none';
+      $('#editorView').style.display = '';
+      $('#preview').style.display = 'none';
+      state.editingId = id;
+      const p = id ? state.posts.find(x=>x.id===id) : {title:'', tags:[], raw:'', content:'', published:true};
+      $('#editorTitle').textContent = id ? 'Éditer l\'article' : 'Nouvel article';
+      $('#title').value = p.title || '';
+      $('#tags').value = (p.tags||[]).join(', ');
+      $('#content').value = p.raw || '';
+      $('#published').checked = !!p.published;
+      $('#deletePost').style.display = id ? '' : 'none';
+    }
+
+    function saveCurrent(){
+      const title = $('#title').value.trim();
+      const raw = $('#content').value.trim();
+      const tags = $('#tags').value.split(',').map(s=>s.trim()).filter(Boolean);
+      const published = $('#published').checked;
+      if(!title || !raw){ alert('Titre et contenu requis.'); return; }
+      const now = new Date().toISOString();
+      if(state.editingId){
+        const idx = state.posts.findIndex(p=>p.id===state.editingId);
+        const prev = state.posts[idx];
+        const updated = { ...prev, title, raw, content: md(raw), tags, published, updatedAt: now, slug: slugify(title) };
+        state.posts[idx] = updated;
+      } else {
+        const post = { id: uid(), title, raw, content: md(raw), tags, published, createdAt: now, updatedAt: now, slug: slugify(title) };
+        state.posts.push(post);
+      }
+      save();
+      state.editingId = null;
+      setHash({});
+      renderList();
+    }
+
+    function deleteCurrent(){
+      if(!state.editingId) return;
+      if(confirm('Supprimer cet article ?')){
+        state.posts = state.posts.filter(p=>p.id!==state.editingId);
+        save();
+        state.editingId = null;
+        renderList();
+      }
+    }
+
+    function togglePublish(id){
+      const p = state.posts.find(x=>x.id===id);
+      if(!p) return;
+      p.published = !p.published;
+      p.updatedAt = new Date().toISOString();
+      save();
+      renderList();
+    }
+
+    function renderPreview(){
+      $('#preview').style.display = '';
+      $('#previewTitle').textContent = $('#title').value.trim() || 'Sans titre';
+      const tags = $('#tags').value.split(',').map(s=>s.trim()).filter(Boolean);
+      const box = $('#previewTags'); box.innerHTML='';
+      tags.forEach(t=>{ const b=document.createElement('span'); b.className='badge'; b.textContent=t; box.appendChild(b); });
+      $('#previewContent').innerHTML = md($('#content').value);
+    }
+
+    function openFromHash(){
+      const {post} = getHash();
+      if(post){
+        const p = state.posts.find(x=>x.slug===post);
+        if(p && (state.admin || p.published)) return renderDetail(p);
+      }
+      renderList();
+    }
+
+    // Événements
+    window.addEventListener('hashchange', openFromHash);
+    $('#q').addEventListener('input', renderList);
+    $('#clearFilters').addEventListener('click', ()=>{ $('#q').value=''; renderList(); });
+    $('#newPostBtn').addEventListener('click', ()=> state.admin ? openEditor(null) : alert('Active le mode admin pour créer un article.'));
+    $('#savePost').addEventListener('click', saveCurrent);
+    $('#cancelEdit').addEventListener('click', ()=>{ state.editingId=null; renderList(); });
+    $('#deletePost').addEventListener('click', deleteCurrent);
+    $('#previewPost').addEventListener('click', renderPreview);
+
+    const adminToggle = $('#adminToggle');
+    adminToggle.addEventListener('click', (e)=>{
+      e.preventDefault();
+      state.admin = !state.admin;
+      const url = new URL(location);
+      if(state.admin) url.searchParams.set('admin','1'); else url.searchParams.delete('admin');
+      history.replaceState(null,'', url);
+      adminToggle.textContent = state.admin ? 'Quitter admin' : 'Mode admin';
+      renderList();
+    });
+
+    // Init
+    load();
+    adminToggle.textContent = state.admin ? 'Quitter admin' : 'Mode admin';
+    openFromHash();
+
+    // Sème 1 exemple si base vide
+    if(state.posts.length === 0){
+      state.posts.push({
+        id: uid(),
+        title: 'Bienvenue sur mon blog',
+        slug: 'bienvenue',
+        raw: "Ceci est un premier article. **Édite-moi** en activant le mode admin (en haut à droite) puis en cliquant sur *Nouveau*.",
+        content: md("Ceci est un premier article. **Édite-moi** en activant le mode admin (en haut à droite) puis en cliquant sur *Nouveau*."),
+        tags: ['intro'],
+        published: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      save();
+      renderList();
+    }
+  </script>
+</body>
+</html>
