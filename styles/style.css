@@ -134,3 +134,53 @@ footer { margin: 60px 0 24px; color: var(--muted); text-align: center; }
   .card, .item, .t-item { box-shadow: none; }
   a { color: #000; text-decoration: none; }
 }
+
+/* === Bouton / lien Pong : gradient + effet "sheen" === */
+@keyframes sheen { to { transform: translateX(100%); } }
+
+nav.primary a.pong {
+  position: relative;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    linear-gradient(135deg, var(--accent), var(--accent-2)) border-box;
+  border-radius: 10px;
+  overflow: hidden;
+}
+nav.primary a.pong::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg,
+    rgba(255,255,255,0) 40%,
+    rgba(255,255,255,.32),
+    rgba(255,255,255,0) 60%);
+  transform: translateX(-100%);
+  animation: sheen 2.2s infinite;
+  pointer-events: none;
+}
+
+.btn.pong {
+  position: relative;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #0a0d12;
+  border: none;
+  overflow: hidden;
+}
+.btn.pong::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg,
+    rgba(255,255,255,0) 40%,
+    rgba(255,255,255,.35),
+    rgba(255,255,255,0) 60%);
+  transform: translateX(-100%);
+  animation: sheen 2.2s infinite;
+  pointer-events: none;
+}
+.btn.pong:hover { filter: brightness(1.07); }
+
+@media (prefers-reduced-motion: reduce) {
+  nav.primary a.pong::after, .btn.pong::after { animation: none; }
+}

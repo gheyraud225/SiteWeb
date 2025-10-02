@@ -68,6 +68,7 @@
         <a href="#apropos">À propos</a>
         <a href="#experiences">Expériences</a>
         <a href="#projets">Projets</a>
+        <a href="./pong.html" class="pong">Pong++</a>
         <a href="./blog.html">Blog</a>
         <a href="#competences">Compétences</a>
         <a href="#formation">Formation</a>
@@ -83,6 +84,7 @@
         <a href="#apropos" onclick="toggleMenu(true)">À propos</a>
         <a href="#experiences" onclick="toggleMenu(true)">Expériences</a>
         <a href="#projets" onclick="toggleMenu(true)">Projets</a>
+        <a href="./pong.html" class="pong" onclick="toggleMenu(true)">Pong++</a>
         <a href="./blog.html" onclick="toggleMenu(true)">Blog</a>
         <a href="#competences" onclick="toggleMenu(true)">Compétences</a>
         <a href="#formation" onclick="toggleMenu(true)">Formation</a>
@@ -98,7 +100,10 @@
       <h2 class="title">Salut, je suis <strong>Roman</strong>, <span style="white-space:nowrap;">étudiant en informatique</span> basé à Zurich.</h2>
       <p class="subtitle">Étudiant en informatique à l'ETH Zürich, je touche à de nombreux sujets dont l'optimisation, l'IA et bien d'autres…</p>
       <div class="cta">
+        
         <a class="btn primary" href="#projets">Voir mes projets</a>
+        <a class="btn pong" href="./pong.html">Jouer à Pong++</a>
+
         <a class="btn" href="#contact">Me contacter</a>
         <a class="btn" href="mailto:mayorr27@gmail.com">Email</a>
       </div>
@@ -156,7 +161,17 @@
         <h3>Projets</h3>
         <a class="badge" href="#">Tout voir</a>
       </div>
+
       <div class="grid cols-3">
+
+        <article class="item">
+  <h4>Pong++ (jeu web)</h4>
+  <p class="meta">Canvas · IA · Bonus & pièges</p>
+  <p>Un petit jeu de ping-pong contre un robot, avec bonus/pièges et attaques. Clavier/souris ou tactile.</p>
+  <p><a href="./pong.html">Lancer le jeu</a></p>
+</article>
+
+
         <article class="item">
           <h4>Black‑Scholes Dashboard</h4>
           <p class="meta">Python · Data display · Finance</p>

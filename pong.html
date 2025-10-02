@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Pong++ – Roman Mayor</title>
+<meta name="description" content="Pong++ : ping‑pong contre une IA sympa, avec bonus/pièges et attaques. Mobile friendly." />
+
+
+<!-- Polices -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+
+<!-- Init thème tôt (comme index) -->
+<script>
+(function(){
+try {
+const stored = localStorage.getItem('theme');
+const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+const theme = stored || (prefersLight ? 'light' : 'dark');
+document.documentElement.setAttribute('data-theme', theme);
+} catch(_) {}
+})();
+</script>
+
+
+<!-- CSS commun -->
+<link rel="stylesheet" href="./styles/style.css">
+
+
+<!-- Spécifique au jeu (léger) -->
+<style>
+.game-wrap{ display:grid; gap:16px; grid-template-columns:1fr; }
+.game-box{ position:relative; display:flex; justify-content:center; }
+canvas#pong{ background:#000; border:3px solid #fff; border-radius:12px; width:100%; max-width:960px; height:auto; touch-action:none; }
+#menu{ position:absolute; inset:auto auto 50% 50%; transform:translate(-50%, 50%); display:flex; flex-direction:column; gap:12px; padding:18px 20px; border:1px solid var(--border); border-radius:12px; background:var(--surface); color:var(--text); box-shadow: var(--shadow); width:min(90vw,380px); z-index:2 }
+#menu h1{ margin:0 0 4px; font-size: clamp(18px, 4vw, 22px); text-align:center }
+#menu .subtitle{ font-size:13px; opacity:.9; text-align:center; margin-bottom:4px; line-height:1.3 }
+#menu select, #menu button{ padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:var(--surface); color:var(--text) }
+#menu .row{ display:flex; gap:10px; justify-content:space-between }
+#menu small{ color:var(--muted); font-size:12px; text-align:center; display:block; margin-top:4px }
+
+
+/* Lien retour flottant (desktop + mobile) */
+.back-link{ position:fixed; left:16px; top:90px; z-index:3; }
+
+
+@media (max-width:900px){ .back-link{ top:72px } }
+</style>
+</head>
+<body>
+<!-- Header du site -->
+<header class="site">
+<div class="wrap site-inner">
+<div class="brand">
+<div class="avatar" aria-hidden="true"></div>
+<strong>Roman Mayor — Pong++</strong>
+</div>
+<nav class="primary" aria-label="Navigation principale">
+<a href="./index.html">Accueil</a>
+<a href="./blog.html">Blog</a>
+<a class="pong" href="./pong.html">Pong++</a>
+</nav>
+<div style="display:flex; gap:8px; align-items:center;">
+<button id="theme-toggle" class="btn" type="button" onclick="toggleTheme()" aria-label="Basculer le thème" aria-pressed="false" title="Basculer Dark/Light">🌙</button>
+</div>
+</div>
+</header>
+
+
+<a class="btn back-link" href="./index.html">← Retour</a>
+
+
+<main class="wrap">
+<section class="header">
+<h1 style="margin:8px 0">Pong++ — VS IA</h1>
+<p class="meta">Clavier : Z/S ou ↑/↓ • Souris/Touch : glisser • <strong>Espace</strong> = pause • <strong>Entrée</strong> = démarrer</p>
+</section>
+
+
+<div class="game-wrap">
+<section class="card" style="padding:16px;">
+<div class="game-box">
+<!-- Menu overlay -->
+<div id="menu" role="dialog" aria-modal="true">
+<h1>Pong Arcade</h1>
+<div class="subtitle" id="subtitle">
+Bonus verts : immunité + raquette plus grande<br>
+Bonus épée (cyan) : bloque l’adversaire (15% coup critique = 2s)<br>
+Pièges rouges : bloquent la raquette 1s
+</div>
+<label for="difficulty">Difficulté IA</label>
+<select id="difficulty">
+<option value="easy">Facile</option>
+<option value="normal" selected>Normal</option>
+<option value="hard">Difficile</option>
+</select>
+<div class="row">
+<button id="startBtn" class="btn primary">Commencer</button>
+<button id="restartBtn" class="btn">Recommencer</button>
+</div>
+<small>⎵ Espace : pause · Souris/Doigt : bouger · Entrée : commencer</small>
+</div>
+
+
+<!-- Canvas du jeu -->
+<canvas id="pong" width="800" height="500"></canvas>
+</div>
+</section>
+</div>
+</main>
+
+    <!-- Thème (mêmes fonctions que l'index) -->
+<script>
+function setTheme(theme){
+document.documentElement.setAttribute('data-theme', theme);
+try { localStorage.setItem('theme', theme); } catch(_) {}
+const btn = document.getElementById('theme-toggle');
+if(btn){
+const isLight = theme === 'light';
+btn.setAttribute('aria-pressed', isLight);
+btn.textContent = isLight ? '☀️' : '🌙';
+btn.title = isLight ? 'Basculer en mode sombre' : 'Basculer en mode clair';
+}
+}
+function toggleTheme(){ const current = document.documentElement.getAttribute('data-theme') || 'dark'; setTheme(current === 'dark' ? 'light' : 'dark'); }
+document.addEventListener('DOMContentLoaded', () => { const current = document.documentElement.getAttribute('data-theme') || 'dark'; setTheme(current); });
+</script>
+  <script>
+    const canvas = document.getElementById("pong");
+    const ctx = canvas.getContext("2d");
+    const menu = document.getElementById("menu");
+    const startBtn = document.getElementById("startBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const difficultySel = document.getElementById("difficulty");
+    const subtitleEl = document.getElementById("subtitle");
+
+    // --- Constantes ---
+    const PADDLE_W = 10, PADDLE_H = 100;
+    const BALL_R = 10;
+    const IMMUNITY_MS = 5000;
+    const GOAL_LIMIT = 3;
+    const BALL_SPEED_INIT = 5;
+    const BALL_SPEED_INC = 1.10;
+    const BALL_SPEED_MAX = 12;
+    const COUNTDOWN_MS = 3000;
+    const CRIT_CHANCE = 0.15;
+    const CRIT_LOCK_MS = 2000;
+    const NORM_LOCK_MS = 1000;
+
+    // Spawn dynamique
+    const SPAWN_BASE_MS = 2500;   // au début
+    const SPAWN_MIN_MS  = 600;    // plancher (rapide)
+    const RAMP_TIME_MS  = 120000; // ~2 min pour atteindre le plancher
+    const SPECIALS_BASE_CAP = 7;  // au début max d'objets simultanés
+    const SPECIALS_MAX_CAP  = 10;  // cap final
+
+    // --- Joueurs ---
+    function createPlayer(x) {
+      return {
+        x,
+        y: canvas.height / 2 - PADDLE_H / 2,
+        width: PADDLE_W,
+        height: PADDLE_H,
+        baseHeight: PADDLE_H,
+        color: "white",
+        locked: false,
+        lockedUntil: 0,
+        immune: false,
+        immuneUntil: 0,
+        dy: 5
+      };
+    }
+    const player = createPlayer(0);
+    const computer = createPlayer(canvas.width - PADDLE_W);
+
+    // --- Balle ---
+    const ball = {
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+      r: BALL_R,
+      dx: BALL_SPEED_INIT,
+      dy: BALL_SPEED_INIT,
+      color: "white",
+      speedMag: BALL_SPEED_INIT
+    };
+
+    let playerScore = 0, computerScore = 0;
+    let gameState = "menu";      // "menu" | "playing" | "paused" | "countdown"
+    let countdownEnd = 0;
+    let pendingDir = +1;
+    let pendingSpeed = BALL_SPEED_INIT;
+
+    // Événements
+    let specials = [];
+    let lastSpawnAt = 0;
+    let roundStartAt = 0; // pour la rampe de spawn
+
+    // Effets visuels (critique)
+    let effects = []; // {type, end, ...}
+
+    // --- Utilitaires ---
+    function drawRect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(x,y,w,h)}
+    function drawCircle(x,y,r,c){ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.closePath();ctx.fill()}
+    function drawText(t,x,y,s=24,a="left"){ctx.fillStyle="white";ctx.font=s+"px Arial";ctx.textAlign=a;ctx.fillText(t,x,y);ctx.textAlign="left"}
+    function circleRectCollision(cx,cy,r,rect){
+      let tx=cx, ty=cy;
+      if(cx<rect.x) tx=rect.x; else if(cx>rect.x+rect.width) tx=rect.x+rect.width;
+      if(cy<rect.y) ty=rect.y; else if(cy>rect.y+rect.height) ty=rect.y+rect.height;
+      const dx=cx-tx, dy=cy-ty; return dx*dx+dy*dy<=r*r;
+    }
+    function normalize(dx,dy){const m=Math.hypot(dx,dy)||1;return {dx:dx/m,dy:dy/m}}
+    function setBallSpeedFromAngle(speed, dirSign, angleDeg){
+      const a = angleDeg * Math.PI/180;
+      const dx = Math.cos(a) * speed * dirSign;
+      const dy = (Math.random() < 0.5 ? -1 : 1) * Math.sin(a) * speed; // vertical up/down aléatoire
+      ball.speedMag = Math.min(speed, BALL_SPEED_MAX);
+      ball.dx = dx; ball.dy = dy;
+    }
+    function randomLaunchAngleDeg(){ return 20 + Math.random()*30; } // 20°–50°
+
+    // --- Dessin épée ---
+    function drawSword(cx, cy, scale=1){
+      const bladeLen = 20*scale, bladeW = 4*scale;
+      const guardW = 12*scale, guardH = 3*scale;
+      const handleLen = 8*scale, handleW = 3*scale;
+      ctx.fillStyle = "#00e5ff";
+      ctx.fillRect(cx - bladeW/2, cy - bladeLen/2, bladeW, bladeLen);
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - bladeLen/2 - 6*scale);
+      ctx.lineTo(cx - bladeW, cy - bladeLen/2);
+      ctx.lineTo(cx + bladeW, cy - bladeLen/2);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#00bcd4";
+      ctx.fillRect(cx - guardW/2, cy - guardH/2 + 2*scale, guardW, guardH);
+      ctx.fillStyle = "#00a0c4";
+      ctx.fillRect(cx - handleW/2, cy + guardH/2 + 2*scale, handleW, handleLen);
+    }
+
+    // --- Contrôles : souris & mobile (pointer) ---
+    function movePlayerToClientY(clientY){
+      // convertit la coordonnée clientY vers le Y du canvas logique (800x500)
+      const rect = canvas.getBoundingClientRect();
+      const scaleY = canvas.height / rect.height; // ratio affichage→logique
+      const yOnCanvas = (clientY - rect.top) * scaleY;
+      if(!isLocked(player)){
+        player.y = yOnCanvas - player.height/2;
+        if(player.y < 0) player.y = 0;
+        if(player.y + player.height > canvas.height) player.y = canvas.height - player.height;
+      }
+    }
+    canvas.addEventListener("pointerdown", (e) => { if(gameState==="playing") movePlayerToClientY(e.clientY); });
+    canvas.addEventListener("pointermove", (e) => { if(gameState==="playing" && e.pressure>=0) movePlayerToClientY(e.clientY); }, {passive:false});
+    // Souris classique (pour desktop)
+    canvas.addEventListener("mousemove", (e) => {
+      if (gameState !== "playing") return;
+      if (e.pointerType) return; // si pointer events gèrent déjà
+      movePlayerToClientY(e.clientY);
+    });
+
+    // Clavier
+    document.addEventListener("keydown",(e)=>{
+      if(e.code==="Space"){ if(gameState==="playing") gameState="paused"; else if(gameState==="paused") gameState="playing"; }
+      if(e.code==="Enter"&&gameState==="menu") startGame();
+      if(e.code==="Escape"){
+        if(gameState==="playing"||gameState==="paused"||gameState==="countdown") showMenu(true);
+        else if(gameState==="menu") showMenu(false,true);
+      }
+    });
+
+    // --- Menu / flow ---
+    startBtn.addEventListener("click",()=>startGame());
+    restartBtn.addEventListener("click",()=>{resetGame();startGame();});
+
+    function showMenu(show,resume=false,message=null){
+      menu.style.display=show?"flex":"none";
+      subtitleEl.innerHTML = message || `Bonus verts : immunité + raquette plus grande<br>Bonus épée (cyan) : bloque l’adversaire (15% coup critique = 2s)<br>Pièges rouges : bloquent la raquette 1s`;
+      gameState = show ? "menu" : (resume ? "playing" : "menu");
+    }
+    function applyDifficulty(){
+      const diff=difficultySel.value; computer.dy= diff==="easy"?3 : diff==="hard"?7 : 5;
+    }
+    function clearEffectsAndEvents(){
+      specials=[]; effects=[];
+      [player,computer].forEach(p=>{p.lockedUntil= 0; p.locked=false;p.immune=false;p.immuneUntil=0;p.height=p.baseHeight;p.color="white";});
+      lastSpawnAt = Date.now();
+      roundStartAt = Date.now();
+    }
+    function centerBall(){ ball.x=canvas.width/2; ball.y=canvas.height/2; ball.dx=0; ball.dy=0; }
+    function resetBall(directionTo=1, speedMag=BALL_SPEED_INIT){
+      pendingDir=directionTo; pendingSpeed=speedMag; centerBall(); startCountdown();
+    }
+    function startCountdown(){ countdownEnd=Date.now()+COUNTDOWN_MS; gameState="countdown"; }
+    function finishCountdown(){
+      const ang = randomLaunchAngleDeg();
+      setBallSpeedFromAngle(pendingSpeed, pendingDir, ang);
+      gameState="playing";
+      // redémarre la rampe depuis ce service
+      roundStartAt = Date.now();
+      lastSpawnAt = Date.now();
+    }
+    function resetGame(){
+      playerScore=0; computerScore=0;
+      [player,computer].forEach(p=>{p.y=canvas.height/2-p.baseHeight/2;p.height=p.baseHeight;p.color="white";p.locked=false;p.immune=false;p.immuneUntil=0; p.lockedUntil =0;});
+      specials=[]; effects=[]; ball.speedMag=BALL_SPEED_INIT; centerBall();
+      pendingDir=(Math.random()>0.5?1:-1); pendingSpeed=BALL_SPEED_INIT;
+      roundStartAt = Date.now();
+      lastSpawnAt = Date.now();
+    }
+    function startGame(){ applyDifficulty(); if(gameState==="menu") resetGame(); menu.style.display="none"; startCountdown(); }
+
+   // --- Événements (trap/bonus/sword) : 60% trap, 10% bonus, 30% sword ---
+function spawnEvent(){
+  const r = Math.random();
+  const type = r < 0.60 ? "trap" : r < 0.75 ? "bonus" : "sword";
+  const color = type==="trap" ? "red" : type==="bonus" ? "green" : "#00e5ff";
+  specials.push({
+    type,
+    x: Math.random()*(canvas.width-80)+40,
+    y: Math.random()*(canvas.height-80)+40,
+    r: type==="sword" ? 14 : 12,
+    dx: (Math.random()>0.5?3:-3),
+    dy: (Math.random()>0.5?3:-3),
+    color,
+    consumed:false
+  });
+}
+
+    function giveImmunity(p){
+      const now=Date.now();
+      p.immune=true; p.immuneUntil=now+IMMUNITY_MS; p.height=p.baseHeight*1.5; p.color="lime";
+    }
+    function maybeExpireImmunity(p){
+      if(p.immune && Date.now()>=p.immuneUntil){ p.immune=false; p.height=p.baseHeight; if(!p.locked) p.color="white"; }
+    }
+
+    function isLocked(p) {
+        return Date.now() < p.lockedUntil;
+    }
+        // Verrou empilable : prolonge le lock si déjà en cours
+    function lockPaddle(p, durationMs = 1000) {
+        const now = Date.now();
+        p.lockedUntil = Math.max(p.lockedUntil, now + durationMs);
+        // feedback visuel immédiat
+        p.color = "orange";
+    }
+
+
+    // --- Effets visuels (critique) ---
+    function spawnFlash(duration=200){ effects.push({type:"flash", end: Date.now()+duration}); }
+    function spawnCritText(){ effects.push({type:"critText", end: Date.now()+600}); }
+    function spawnBurst(x, y){
+      const N = 18; const arr = [];
+      for(let i=0;i<N;i++){ arr.push({ a:(i/N)*Math.PI*2, r:0, vr:3+Math.random()*3, alpha:1 }); }
+      effects.push({type:"burst", x, y, parts: arr, end: Date.now()+700});
+    }
+    // --- Effets visuels de renvoi (flash rouge + texte + burst rouge) ---
+    function spawnReflectFlash(duration = 180) {
+        effects.push({ type: "reflectFlash", end: Date.now() + duration });
+    }
+    function spawnReflectText() {
+        effects.push({ type: "reflectText", end: Date.now() + 600 });
+    }
+    function spawnBurstColored(x, y, rgb = "255,80,80") {
+        const N = 16;
+        const parts = [];
+        for (let i = 0; i < N; i++) {
+            parts.push({
+            a: (i / N) * Math.PI * 2,
+            r: 0,
+            vr: 3 + Math.random() * 3,
+            alpha: 1
+            });
+  }
+  effects.push({ type: "burstColored", x, y, rgb, parts, end: Date.now() + 600 });
+}
+
+    function renderEffects(){
+      const now = Date.now();
+      effects = effects.filter(e => e.end > now);
+      for(const e of effects){
+        const t = (e.end - now);
+        if(e.type==="flash"){
+          const alpha = Math.max(0, Math.min(0.35, t/200*0.35));
+          ctx.fillStyle = `rgba(0, 229, 255, ${alpha})`;
+          ctx.fillRect(0,0,canvas.width,canvas.height);
+        }
+        if(e.type==="critText"){
+          const alpha = Math.max(0, Math.min(1, t/600));
+          ctx.save(); ctx.globalAlpha = alpha;
+          drawText("COUP CRITIQUE !", canvas.width/2, canvas.height/2 - 60, 36, "center");
+          ctx.restore();
+        }
+        if(e.type==="burst"){
+          ctx.save();
+          for(const p of e.parts){
+            p.r += p.vr; p.alpha *= 0.94;
+            const bx = e.x + Math.cos(p.a)*p.r;
+            const by = e.y + Math.sin(p.a)*p.r;
+            ctx.fillStyle = `rgba(0,229,255,${p.alpha})`;
+            ctx.beginPath(); ctx.arc(bx, by, 3, 0, Math.PI*2); ctx.fill();
+          }
+          ctx.restore();
+        }
+        if (e.type === "reflectFlash") {
+  const alpha = Math.max(0, Math.min(0.28, (e.end - now) / 180 * 0.28));
+  ctx.fillStyle = `rgba(255, 60, 60, ${alpha})`;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+if (e.type === "reflectText") {
+  const alpha = Math.max(0, Math.min(1, (e.end - now) / 600));
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  // teinte rouge/orange pour le renvoi
+  ctx.fillStyle = "#ff6363";
+  ctx.font = "bold 32px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("↩ renvoyé !", canvas.width / 2, canvas.height / 2 - 60);
+  ctx.restore();
+}
+
+if (e.type === "burstColored") {
+  ctx.save();
+  for (const p of e.parts) {
+    p.r += p.vr;
+    p.alpha *= 0.94;
+    const bx = e.x + Math.cos(p.a) * p.r;
+    const by = e.y + Math.sin(p.a) * p.r;
+    ctx.fillStyle = `rgba(${e.rgb}, ${p.alpha})`;
+    ctx.beginPath();
+    ctx.arc(bx, by, 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+      }
+    }
+
+    // --- Spawn dynamique (rampe) ---
+    function currentSpawnIntervalMs(){
+      const elapsed = Math.max(0, Date.now() - roundStartAt);
+      const t = Math.min(1, elapsed / RAMP_TIME_MS); // 0→1
+      const cur = SPAWN_BASE_MS - (SPAWN_BASE_MS - SPAWN_MIN_MS) * t;
+      return cur;
+    }
+    function currentSpecialsCap(){
+      const elapsed = Math.max(0, Date.now() - roundStartAt);
+      const t = Math.min(1, elapsed / RAMP_TIME_MS);
+      return Math.round(SPECIALS_BASE_CAP + (SPECIALS_MAX_CAP - SPECIALS_BASE_CAP) * t);
+    }
+
+    // --- Update ---
+    function update(){
+      if(gameState==="menu"||gameState==="paused") return;
+
+      if(gameState==="countdown"){
+        centerBall();
+        if(Date.now()>=countdownEnd) finishCountdown();
+        return;
+      }
+
+      // balle
+      ball.x+=ball.dx; ball.y+=ball.dy;
+      if(ball.y+ball.r>canvas.height||ball.y-ball.r<0) ball.dy*=-1;
+
+      // IA
+      if(!isLocked(computer)){
+        if(computer.y+computer.height/2<ball.y) computer.y+=computer.dy; else computer.y-=computer.dy;
+        if(computer.y<0) computer.y=0; if(computer.y+computer.height>canvas.height) computer.y=canvas.height-computer.height;
+      }
+
+      // collisions balle ↔ raquettes
+      if(circleRectCollision(ball.x,ball.y,ball.r,player)){ ball.dx=Math.abs(ball.dx); ball.x=player.x+player.width+ball.r; }
+      if(circleRectCollision(ball.x,ball.y,ball.r,computer)){ ball.dx=-Math.abs(ball.dx); ball.x=computer.x-ball.r; }
+
+      // buts (reset + speed up + countdown)
+      if(ball.x<-ball.r){
+        computerScore++;
+        if(computerScore>=GOAL_LIMIT){ showMenu(true,false,`💥 Fin de partie : <b>Victoire IA</b><br>Score final ${playerScore}–${computerScore}`); return; }
+        clearEffectsAndEvents();
+        const newMag=Math.min(ball.speedMag*BALL_SPEED_INC,BALL_SPEED_MAX);
+        resetBall(+1,newMag); return;
+      }
+      if(ball.x>canvas.width+ball.r){
+        playerScore++;
+        if(playerScore>=GOAL_LIMIT){ showMenu(true,false,`🎉 Fin de partie : <b>Victoire Joueur</b><br>Score final ${playerScore}–${computerScore}`); return; }
+        clearEffectsAndEvents();
+        const newMag=Math.min(ball.speedMag*BALL_SPEED_INC,BALL_SPEED_MAX);
+        resetBall(-1,newMag); return;
+      }
+
+      // spawn dynamique : plus le temps passe, plus c'est fréquent, avec un cap
+      const now=Date.now();
+      const interval = currentSpawnIntervalMs();
+      const cap = currentSpecialsCap();
+      if (now - lastSpawnAt > interval && specials.length < cap){
+        spawnEvent();
+        lastSpawnAt = now;
+      }
+
+      // déplacements + collisions specials
+      for(const ev of specials){
+        ev.x+=ev.dx; ev.y+=ev.dy;
+        if(ev.y+ev.r>canvas.height||ev.y-ev.r<0) ev.dy*=-1;
+        if(ev.x+ev.r>canvas.width||ev.x-ev.r<0) ev.dx*=-1;
+
+        
+        // player ramasse
+        if (!ev.consumed && circleRectCollision(ev.x, ev.y, ev.r, player)) {
+            if (ev.type === "trap") {
+                if (player.immune) {
+                lockPaddle(computer, NORM_LOCK_MS);   // <— ignore l'immunité adverse (renvoi)
+                spawnReflectFlash(); spawnReflectText();
+                spawnBurstColored(computer.x + computer.width/2, computer.y + computer.height/2, "255,80,80");
+                } else {
+                lockPaddle(player, NORM_LOCK_MS);
+                }
+            }
+            if (ev.type === "bonus") giveImmunity(player);
+            if (ev.type === "sword") {
+                const isCrit = Math.random() < CRIT_CHANCE;
+                lockPaddle(computer, isCrit ? CRIT_LOCK_MS : NORM_LOCK_MS);
+                if (isCrit) { spawnFlash(200); spawnCritText(); spawnBurst(computer.x + computer.width/2, computer.y + computer.height/2); }
+            }
+        ev.consumed = true;
+        }
+
+
+
+        // IA ramasse
+        if (!ev.consumed && circleRectCollision(ev.x, ev.y, ev.r, computer)) {
+            if (ev.type === "trap") {
+                if (computer.immune) {
+                lockPaddle(player, NORM_LOCK_MS);
+                spawnReflectFlash(); spawnReflectText();
+                spawnBurstColored(player.x + player.width/2, player.y + player.height/2, "255,80,80");
+                } else {
+                lockPaddle(computer, NORM_LOCK_MS);
+                }
+            }
+            if (ev.type === "bonus") giveImmunity(computer);
+            if (ev.type === "sword") {
+                const isCrit = Math.random() < CRIT_CHANCE;
+                lockPaddle(player, isCrit ? CRIT_LOCK_MS : NORM_LOCK_MS);
+                if (isCrit) { spawnFlash(200); spawnCritText(); spawnBurst(player.x + player.width/2, player.y + player.height/2); }
+            }
+            ev.consumed = true;
+}
+
+
+
+      }
+      // Mise à jour des couleurs en fonction des états
+        [player, computer].forEach(p => {
+            if (isLocked(p)) {
+                p.color = "orange";
+            } else {
+                p.color = p.immune ? "lime" : "white";
+            }
+        });
+
+      specials = specials.filter(ev=>!ev.consumed);
+
+      // fin d’immunité
+      maybeExpireImmunity(player); maybeExpireImmunity(computer);
+    }
+
+    // --- HUD ---
+    function drawHUD(){
+      const traps=specials.filter(s=>s.type==="trap").length;
+      const bonus=specials.filter(s=>s.type==="bonus").length;
+      const swords=specials.filter(s=>s.type==="sword").length;
+      drawText(`Pièges: ${traps}  |  Bonus: ${bonus}  |  Épées: ${swords}`, canvas.width/2, 28, 20, "center");
+    }
+    function drawImmunityBar(p){
+      if(!p.immune) return;
+      const remaining=Math.max(0,p.immuneUntil-Date.now());
+      const ratio=remaining/IMMUNITY_MS;
+      const barW=60, barH=6;
+      const x= p===player ? p.x+p.width+8 : p.x-(barW+8);
+      const y= p.y-12;
+      ctx.fillStyle="rgba(255,255,255,0.2)"; ctx.fillRect(x,y,barW,barH);
+      ctx.fillStyle="rgba(0,255,0,0.9)"; ctx.fillRect(x,y,barW*ratio,barH);
+    }
+
+    function drawStunIcon(p) {
+        if (!isLocked(p)) return;
+        ctx.fillStyle = "#ffa500";
+        ctx.font = "bold 16px Arial";
+        ctx.fillText("⚡", p.x + (p === player ? p.width + 6 : -16), p.y - 6);
+    }
+    // --- Render ---
+    function render(){
+      drawRect(0,0,canvas.width,canvas.height,"black");
+      drawHUD();
+
+      // halo immunité
+      if(player.immune){ctx.fillStyle="rgba(0,255,0,0.25)";ctx.fillRect(player.x-5,player.y-5,player.width+10,player.height+10)}
+      if(computer.immune){ctx.fillStyle="rgba(0,255,0,0.25)";ctx.fillRect(computer.x-5,computer.y-5,computer.width+10,computer.height+10)}
+
+      // raquettes + balle
+      drawRect(player.x,player.y,player.width,player.height,player.color);
+      drawRect(computer.x,computer.y,computer.width,computer.height,computer.color);
+      drawCircle(ball.x,ball.y,ball.r,ball.color);
+
+      // specials
+      for(const ev of specials){
+        if(ev.type==="sword") drawSword(ev.x, ev.y, 1);
+        else drawCircle(ev.x, ev.y, ev.r, ev.color);
+      }
+
+      // barres d’immunité
+      drawImmunityBar(player); drawImmunityBar(computer);
+
+      // effets
+      renderEffects();
+      drawStunIcon(player);
+      drawStunIcon(computer);
+
+      // score
+      drawText(playerScore,canvas.width/4,50,40);
+      drawText(computerScore,3*canvas.width/4,50,40);
+
+      if(gameState==="paused"){ drawText("⏸ PAUSE",canvas.width/2-80,canvas.height/2,40); drawText("Espace pour reprendre",canvas.width/2-150,canvas.height/2+40,20); }
+      if(gameState==="countdown"){
+        const msLeft=Math.max(0,countdownEnd-Date.now());
+        const sec=Math.ceil(msLeft/1000);
+        drawText(sec.toString(),canvas.width/2,canvas.height/2,72,"center");
+      }
+    }
+
+    // --- Game loop ---
+    function game(){ update(); render(); }
+    setInterval(game,1000/60);
+
+    // Démarrage
+    menu.style.display="flex";
+  </script>
+</body>
+</html>
