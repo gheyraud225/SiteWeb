@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Exercises – Roman Mayor</title>
+  
+  <link rel="apple-touch-icon" sizes="180x180" href="/asset/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/asset/icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/asset/icons/favicon-16x16.png">
+  <meta name="theme-color" content="#0b0c0f">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles/style.css">
+
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <script>
+    (function(){
+      try {
+        const stored = localStorage.getItem('theme');
+        const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+        document.documentElement.setAttribute('data-theme', stored || (prefersLight ? 'light' : 'dark'));
+      } catch(_) {}
+    })();
+  </script>
+  
+  <style>
+    .math-box { font-size: 18px; background: var(--surface); padding: 24px; border-radius: var(--radius); border: 1px solid var(--border); text-align: center; margin-bottom: 20px; overflow-x: auto;}
+    .inputs-container { display: flex; gap: 16px; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
+    .input-math { width: 90px; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-family: monospace; text-align: center; font-size: 16px; }
+    .feedback-box { margin-top: 16px; font-weight: 500; padding: 12px; border-radius: 8px; display: none; text-align: center; }
+    .feedback-box.error { display: block; background: rgba(255, 107, 107, 0.1); color: #ff6b6b; border: 1px solid rgba(255, 107, 107, 0.3); }
+    .feedback-box.success { display: block; background: rgba(24, 216, 176, 0.1); color: var(--accent-2); border: 1px solid rgba(24, 216, 176, 0.3); }
+    .feedback-box.info { display: block; background: rgba(110, 168, 254, 0.1); color: var(--accent); border: 1px solid rgba(110, 168, 254, 0.3); }
+    .progress { font-size: 14px; color: var(--muted); text-align: right; margin-bottom: 12px; }
+    mjx-container { color: var(--text); }
+    
+    .filter-bar { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 24px; align-items: center; }
+    .filter-select { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); outline: none; }
+    .exo-badges { display: flex; gap: 8px; margin-top: 8px; }
+    .exo-badge { font-size: 12px; padding: 4px 8px; border-radius: 4px; background: rgba(110, 168, 254, 0.1); color: var(--accent); border: 1px solid rgba(110, 168, 254, 0.3); }
+    .exo-badge.diff-1 { background: rgba(24, 216, 176, 0.1); color: var(--accent-2); border-color: rgba(24, 216, 176, 0.3); }
+    .exo-badge.diff-2 { background: rgba(255, 165, 0, 0.1); color: orange; border-color: rgba(255, 165, 0, 0.3); }
+    .exo-badge.diff-3 { background: rgba(255, 107, 107, 0.1); color: #ff6b6b; border-color: rgba(255, 107, 107, 0.3); }
+  </style>
+</head>
+<body>
+  <header class="site">
+    <div class="wrap site-inner">
+      <div class="brand">
+        <div class="avatar" aria-hidden="true"><img src="asset/img/pp.webp" alt="Portrait"></div>
+        <strong>Roman Mayor — TA Lineare Algebra</strong>
+      </div>
+      <nav class="primary">
+        <a href="./index.html">Home</a>
+        <a href="./teaching.html">Teaching</a>
+        <a href="./exercices.html" style="font-weight: 600; color: var(--accent);">Exercises</a>
+      </nav>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button id="theme-toggle" class="btn" onclick="toggleTheme()">🌙</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="header-block" style="flex-direction: column; align-items: flex-start; margin-top: 24px;">
+      <h1 style="margin:0">Practice Series</h1>
+      <p class="subtitle" style="margin-top: 8px;">Answer the questions. You have 3 attempts per question before the solution is revealed.</p>
+    </section>
+
+    <div class="filter-bar card" style="padding: 16px;">
+      <span style="font-weight: 500;">Filters:</span>
+      <select id="filter-type" class="filter-select">
+        <option value="all">All topics</option>
+        <option value="systeme">Systems of Equations</option>
+        <option value="valeurs_propres">Eigenvalues</option>
+        <option value="determinant">Determinant</option>
+        <option value="espace_vectoriel">Vector Spaces</option>
+      </select>
+      <select id="filter-diff" class="filter-select">
+        <option value="all">All difficulties</option>
+        <option value="1">Easy (1)</option>
+        <option value="2">Medium (2)</option>
+        <option value="3">Hard (3)</option>
+      </select>
+      <button class="btn primary" onclick="applyFilters()">Apply & Restart</button>
+    </div>
+
+    <section class="card" style="padding: 24px; max-width: 800px; margin: 0 auto;">
+      <div class="progress" id="progress-text">Question 1 / X</div>
+      
+      <h3 id="question-title" style="margin-top: 0;">Loading...</h3>
+      <div id="badge-container" class="exo-badges"></div>
+      
+      <div id="question-text" class="math-box" style="margin-top: 16px;"></div>
+
+      <div id="inputs-area" class="inputs-container"></div>
+
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button id="btn-verify" class="btn primary" onclick="verifyAnswers()" style="display: none;">Check</button>
+        <button id="btn-next" class="btn" style="display: none;" onclick="nextQuestion()">Next question ➔</button>
+      </div>
+
+      <div id="feedback" class="feedback-box"></div>
+    </section>
+  </main>
+
+  <script src="./data/exercices.js"></script>
+
+  <script>
+    // Variables globales
+    let filteredExercices = []; 
+    let currentIndex = 0;
+    let currentCount = 0;
+    let questionSeen = [];
+    let attemptsLeft = 3;
+
+    function applyFilters() {
+      const typeFilter = document.getElementById('filter-type').value;
+      const diffFilter = document.getElementById('filter-diff').value;
+
+      filteredExercices = exercices.filter(exo => {
+        const matchType = typeFilter === 'all' || exo.type === typeFilter;
+        const matchDiff = diffFilter === 'all' || exo.difficulte.toString() === diffFilter;
+        return matchType && matchDiff;
+      });
+
+      currentCount = 0;
+      questionSeen = [];
+      
+      if(filteredExercices.length === 0) {
+        document.getElementById('progress-text').innerText = "0 / 0";
+        document.getElementById('question-title').innerText = "No exercises found";
+        document.getElementById('badge-container').innerHTML = "";
+        document.getElementById('question-text').innerHTML = "Please modify your filters, no exercises match these criteria.";
+        document.getElementById('inputs-area').innerHTML = "";
+        document.getElementById('btn-verify').style.display = "none";
+        document.getElementById('btn-next').style.display = "none";
+        document.getElementById('feedback').className = "feedback-box";
+      } else {
+        nextQuestion();
+      }
+    }
+
+    function loadQuestion() {
+      const exo = filteredExercices[currentIndex];
+      attemptsLeft = 3;
+
+      document.getElementById('progress-text').innerText = `Question ${currentCount} / ${filteredExercices.length}`;
+      document.getElementById('question-title').innerText = exo.titre;
+      
+      const diffLabels = {1: "Easy", 2: "Medium", 3: "Hard"};
+      document.getElementById('badge-container').innerHTML = `
+        <span class="exo-badge">${exo.type}</span>
+        <span class="exo-badge diff-${exo.difficulte}">Level ${exo.difficulte}: ${diffLabels[exo.difficulte]}</span>
+      `;
+
+      document.getElementById('question-text').innerHTML = exo.texte;
+      
+      document.getElementById('feedback').className = "feedback-box";
+      document.getElementById('btn-verify').style.display = "inline-flex";
+      document.getElementById('btn-next').style.display = "none";
+
+      const inputsArea = document.getElementById('inputs-area');
+      inputsArea.innerHTML = ""; 
+
+      exo.reponses.forEach((rep, index) => {
+        const label = document.createElement('label');
+        label.style.display = "flex";
+        label.style.alignItems = "center";
+        label.style.gap = "8px";
+        label.innerHTML = `
+          <strong>${rep.nom} = </strong>
+          <input type="number" step="any" id="ans-${index}" class="input-math" placeholder="...">
+        `;
+        inputsArea.appendChild(label);
+      });
+
+      if (window.MathJax) {
+        MathJax.typesetPromise([document.getElementById('question-text'), document.getElementById('inputs-area')]);
+      }
+    }
+
+    function verifyAnswers() {
+      const exo = filteredExercices[currentIndex];
+      let allCorrect = true;
+
+      exo.reponses.forEach((rep, index) => {
+        const userInput = parseFloat(document.getElementById(`ans-${index}`).value);
+        if (userInput !== rep.valeur) {
+          allCorrect = false;
+        }
+      });
+
+      const feedback = document.getElementById('feedback');
+
+      if (allCorrect) {
+        feedback.innerHTML = "🎉 Correct!";
+        feedback.className = "feedback-box success";
+        document.getElementById('btn-verify').style.display = "none";
+        document.getElementById('btn-next').style.display = "inline-flex";
+      } else {
+        attemptsLeft--;
+        if (attemptsLeft > 0) {
+          feedback.innerHTML = `⚠️ Incorrect. <strong>${attemptsLeft} attempt(s)</strong> remaining.`;
+          feedback.className = "feedback-box error";
+        } else {
+          let solutionHtml = "❌ Out of attempts. The correct answer was:<br><br>";
+          exo.reponses.forEach(rep => {
+            solutionHtml += `${rep.nom} = ${rep.valeur} &nbsp;&nbsp;&nbsp;`;
+          });
+          
+          feedback.innerHTML = solutionHtml;
+          feedback.className = "feedback-box info";
+          
+          if (window.MathJax) { MathJax.typesetPromise([feedback]); }
+
+          exo.reponses.forEach((rep, index) => {
+            document.getElementById(`ans-${index}`).disabled = true;
+            document.getElementById(`ans-${index}`).value = rep.valeur;
+          });
+
+          document.getElementById('btn-verify').style.display = "none";
+          document.getElementById('btn-next').style.display = "inline-flex";
+        }
+      }
+    }
+
+    function nextQuestion() {
+      if(currentCount >= filteredExercices.length){
+        finishQuiz();
+        return;
+      }
+      
+      currentIndex = Math.floor(Math.random() * filteredExercices.length);
+      if(questionSeen.includes(currentIndex)){
+        while(questionSeen.includes(currentIndex)){
+          currentIndex = Math.floor(Math.random() * filteredExercices.length);
+        }
+      }
+      
+      questionSeen.push(currentIndex);
+      currentCount++;
+      loadQuestion();
+    }
+
+    function finishQuiz() {
+      document.getElementById('progress-text').innerText = "Finished";
+      document.getElementById('question-title').innerText = "Practice Finished!";
+      document.getElementById('badge-container').innerHTML = "";
+      document.getElementById('question-text').innerHTML = "You have completed all exercises for these filters.";
+      document.getElementById('inputs-area').innerHTML = "";
+      document.getElementById('feedback').className = "feedback-box";
+      document.getElementById('btn-verify').style.display = "none";
+      document.getElementById('btn-next').style.display = "none";
+    }
+
+    function toggleTheme(){
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const newTheme = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      try { localStorage.setItem('theme', newTheme); } catch(_) {}
+    }
+
+    // INITIALISATION SÉCURISÉE
+    window.onload = function() {
+      // Vérifier si le fichier ./data/exercices.js a bien été chargé
+      if (typeof exercices === 'undefined') {
+        document.getElementById('question-title').innerText = "Data file missing";
+        document.getElementById('question-text').innerHTML = "Could not load the file <code>data/exercices.js</code>.<br><br>Make sure the folder <code>data</code> is in the same directory as <code>exercices.html</code>.";
+        document.getElementById('progress-text').innerText = "Error";
+        return;
+      }
+      
+      filteredExercices = [...exercices];
+      nextQuestion();
+    };
+  </script>
+</body>
+</html>
